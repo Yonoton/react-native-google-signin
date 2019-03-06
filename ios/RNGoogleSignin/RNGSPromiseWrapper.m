@@ -21,36 +21,35 @@
 @implementation RNGSPromiseWrapper
 
 -(BOOL)setPromiseWithInProgressCheck: (RCTPromiseResolveBlock)resolve rejecter:(RCTPromiseRejectBlock)reject fromCallSite:(NSString *) callsite {
-  if (self.promiseResolve) {
-    return NO;
+  BOOL success = NO;
+  if (!self.promiseResolve) {
+    self.promiseResolve = resolve;
+    self.promiseReject = reject;
+    self.nameOfCallInProgress = callsite;
+    success = YES;
   }
-  self.promiseResolve = resolve;
-  self.promiseReject = reject;
-  self.nameOfCallInProgress = callsite;
-  return YES;
+  return success;
 }
 
 -(void)resolve: (id) result {
-  RCTPromiseResolveBlock resolver = self.promiseResolve;
-  if (resolver == nil) {
+  if (self.promiseResolve == nil) {
     NSLog(@"cannot resolve promise because it's null");
     return;
   }
+  self.promiseResolve(result);
   [self resetMembers];
-  resolver(result);
 }
 
 -(void)reject:(NSString *)message withError:(NSError *)error {
-  RCTPromiseRejectBlock rejecter = self.promiseReject;
-  if (rejecter == nil) {
+  if (self.promiseResolve == nil) {
     NSLog(@"cannot resolve promise because it's null");
     return;
   }
   NSString* errorCode = [NSString stringWithFormat:@"%ld", error.code];
   NSString* errorMessage = [NSString stringWithFormat:@"RNGoogleSignInError: %@, %@", message, error.description];
   
+  self.promiseReject(errorCode, errorMessage, error);
   [self resetMembers];
-  rejecter(errorCode, errorMessage, error);
 }
 
 -(void)resetMembers {

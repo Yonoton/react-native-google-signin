@@ -1,5 +1,4 @@
 #import <React/RCTLog.h>
-#import <React/RCTUtils.h>
 #import "RNGoogleSignin.h"
 #import "RNGSPromiseWrapper.h"
 
@@ -89,8 +88,9 @@ RCT_EXPORT_METHOD(configure:(NSDictionary *)options
   resolve(@YES);
 }
 
-RCT_EXPORT_METHOD(signInSilently:(RCTPromiseResolveBlock)resolve
-                  rejecter:(RCTPromiseRejectBlock)reject)
+RCT_REMAP_METHOD(signInSilently,
+                 currentUserAsyncResolve:(RCTPromiseResolveBlock)resolve
+                 currentUserAsyncReject:(RCTPromiseRejectBlock)reject)
 {
   NSString* methodName = @"signInSilently";
   BOOL wasPromiseSet = [self.promiseWrapper setPromiseWithInProgressCheck:resolve rejecter:reject fromCallSite:methodName];
@@ -101,8 +101,9 @@ RCT_EXPORT_METHOD(signInSilently:(RCTPromiseResolveBlock)resolve
   [[GIDSignIn sharedInstance] signInSilently];
 }
 
-RCT_EXPORT_METHOD(signIn:(RCTPromiseResolveBlock)resolve
-                  signInReject:(RCTPromiseRejectBlock)reject)
+RCT_REMAP_METHOD(signIn,
+                 signInResolve:(RCTPromiseResolveBlock)resolve
+                 signInReject:(RCTPromiseRejectBlock)reject)
 {
   NSString* methodName = @"signIn";
   BOOL wasPromiseSet = [self.promiseWrapper setPromiseWithInProgressCheck:resolve rejecter:reject fromCallSite:methodName];
@@ -113,15 +114,17 @@ RCT_EXPORT_METHOD(signIn:(RCTPromiseResolveBlock)resolve
   [[GIDSignIn sharedInstance] signIn];
 }
 
-RCT_EXPORT_METHOD(signOut:(RCTPromiseResolveBlock)resolve
-                  signOutReject:(RCTPromiseRejectBlock)reject)
+RCT_REMAP_METHOD(signOut,
+                 signOutResolve:(RCTPromiseResolveBlock)resolve
+                 signOutReject:(RCTPromiseRejectBlock)reject)
 {
   [[GIDSignIn sharedInstance] signOut];
   resolve(@YES);
 }
 
-RCT_EXPORT_METHOD(revokeAccess:(RCTPromiseResolveBlock)resolve
-                  revokeAccessReject:(RCTPromiseRejectBlock)reject)
+RCT_REMAP_METHOD(revokeAccess,
+                 revokeAccessResolve:(RCTPromiseResolveBlock)resolve
+                 revokeAccessReject:(RCTPromiseRejectBlock)reject)
 {
   NSString* methodName = @"revokeAccess";
   BOOL wasPromiseSet = [self.promiseWrapper setPromiseWithInProgressCheck:resolve rejecter:reject fromCallSite:methodName];
@@ -132,11 +135,12 @@ RCT_EXPORT_METHOD(revokeAccess:(RCTPromiseResolveBlock)resolve
   [[GIDSignIn sharedInstance] disconnect];
 }
 
-RCT_EXPORT_METHOD(isSignedIn:(RCTPromiseResolveBlock)resolve
-                  rejecter:(RCTPromiseRejectBlock)reject)
+RCT_REMAP_METHOD(isSignedIn,
+                 resolver:(RCTPromiseResolveBlock)resolve
+                 rejecter:(RCTPromiseRejectBlock)reject)
 {
   BOOL isSignedIn = [[GIDSignIn sharedInstance] hasAuthInKeychain];
-  resolve(@(isSignedIn));
+  resolve([NSNumber numberWithBool:isSignedIn]);
 }
 
 - (void)signIn:(GIDSignIn *)signIn didSignInForUser:(GIDGoogleUser *)user withError:(NSError *)error {
@@ -147,64 +151,28 @@ RCT_EXPORT_METHOD(isSignedIn:(RCTPromiseResolveBlock)resolve
   }
 }
 
-RCT_EXPORT_METHOD(getCurrentUser:(RCTPromiseResolveBlock)resolve
-                  rejecter:(RCTPromiseRejectBlock)reject)
-{
-  GIDGoogleUser *currentUser = [GIDSignIn sharedInstance].currentUser;
-  resolve(RCTNullIfNil([self createUserDictionary:currentUser]));
-}
-
-RCT_EXPORT_METHOD(getTokens:(RCTPromiseResolveBlock)resolve
-                    rejecter:(RCTPromiseRejectBlock)reject)
-{
-  GIDGoogleUser *currentUser = [GIDSignIn sharedInstance].currentUser;
-  if (currentUser == nil) {
-    reject(@"getTokens", @"getTokens requires a user to be signed in", nil);
-    return;
-  }
-  
-  GIDAuthenticationHandler handler = ^void(GIDAuthentication *authentication, NSError *error) {
-    if (error) {
-      reject(@"getTokens", error.localizedDescription, nil);
-    } else {
-      resolve(@{
-                @"idToken" : authentication.idToken,
-                @"accessToken" : authentication.accessToken,
-                });
-    }
-  };
-  
-  [currentUser.authentication getTokensWithHandler:handler];
-}
-
 - (void)resolveWithUserDetails: (GIDGoogleUser *) user {
-  [self.promiseWrapper resolve:[self createUserDictionary:user]];
-}
-
-- (NSDictionary*)createUserDictionary: (nullable GIDGoogleUser *) user {
-  if (!user) {
-    return nil;
-  }
   NSURL *imageURL = user.profile.hasImage ? [user.profile imageURLWithDimension:120] : nil;
-  
+
   NSDictionary *userInfo = @{
                              @"id": user.userID,
-                             @"name": RCTNullIfNil(user.profile.name),
-                             @"givenName": RCTNullIfNil(user.profile.givenName),
-                             @"familyName": RCTNullIfNil(user.profile.familyName),
+                             @"name": user.profile.name ? user.profile.name : [NSNull null],
+                             @"givenName": user.profile.givenName ? user.profile.givenName : [NSNull null],
+                             @"familyName": user.profile.familyName ? user.profile.familyName : [NSNull null],
                              @"photo": imageURL ? imageURL.absoluteString : [NSNull null],
                              @"email": user.profile.email
                              };
-  
+
   NSDictionary *params = @{
                            @"user": userInfo,
                            @"idToken": user.authentication.idToken,
-                           @"serverAuthCode": RCTNullIfNil(user.serverAuthCode),
+                           @"serverAuthCode": user.serverAuthCode ? user.serverAuthCode : [NSNull null],
                            @"accessToken": user.authentication.accessToken,
                            @"scopes": user.grantedScopes,
                            @"accessTokenExpirationDate": [NSNumber numberWithDouble:user.authentication.accessTokenExpirationDate.timeIntervalSinceNow] // Deprecated as of 2018-08-06
                            };
-  return params;
+
+  [self.promiseWrapper resolve:params];
 }
 
 - (void)rejectWithSigninError: (NSError *) error {

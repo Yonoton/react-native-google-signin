@@ -12,45 +12,33 @@ public class PromiseWrapper {
 
 
     public boolean setPromiseWithInProgressCheck(Promise promise, String fromCallsite) {
-        if (this.promise != null) {
-            return false;
+        boolean success = false;
+        if (this.promise == null) {
+            this.promise = promise;
+            nameOfCallInProgress = fromCallsite;
+            success = true;
         }
-        this.promise = promise;
-        nameOfCallInProgress = fromCallsite;
-        return true;
+        return success;
     }
 
     public void resolve(Object value) {
-        Promise resolver = promise;
-        if (resolver == null) {
+        if (promise == null) {
             Log.w(MODULE_NAME, "cannot resolve promise because it's null");
             return;
         }
 
+        promise.resolve(value);
         resetMembers();
-        resolver.resolve(value);
-    }
-
-    public void reject(String code, Throwable throwable) {
-        Promise rejecter = promise;
-        if (rejecter == null) {
-            Log.w(MODULE_NAME, "cannot reject promise because it's null");
-            return;
-        }
-
-        resetMembers();
-        rejecter.reject(code, throwable.getLocalizedMessage(), throwable);
     }
 
     public void reject(String code, String message) {
-        Promise rejecter = promise;
-        if (rejecter == null) {
+        if (promise == null) {
             Log.w(MODULE_NAME, "cannot reject promise because it's null");
             return;
         }
 
+        promise.reject(code, message);
         resetMembers();
-        rejecter.reject(code, message);
     }
 
     public String getNameOfCallInProgress(){

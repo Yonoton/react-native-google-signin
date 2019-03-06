@@ -7,10 +7,9 @@
 ## Features
 
 - Support all 3 types of authentication methods (standard, with server-side validation or with offline access (aka server side access))
-- Native signin buttons
+- Native signin button
 - Consistent API between Android and iOS
 - Promise-based JS API
-- Typings for TypeScript and Flow
 
 ### Note
 
@@ -22,7 +21,7 @@ If you use React Native < `v0.47` stick with `v0.10.0` (`npm install react-nativ
 
 `yarn add react-native-google-signin`
 
-Then follow the [Android guide](docs/android-guide.md) and [iOS guide](docs/ios-guide.md)
+Then follow to the [Android guide](android-guide.md) and [iOS guide](ios-guide.md)
 
 ## Public API
 
@@ -35,8 +34,8 @@ import { GoogleSignin, GoogleSigninButton } from 'react-native-google-signin';
 
 render() {
   <GoogleSigninButton
-    style={{ width: 192, height: 48 }}
-    size={GoogleSigninButton.Size.Wide}
+    style={{ width: 48, height: 48 }}
+    size={GoogleSigninButton.Size.Icon}
     color={GoogleSigninButton.Color.Dark}
     onPress={this._signIn}
     disabled={this.state.isSigninInProgress} />
@@ -97,7 +96,7 @@ GoogleSignin.configure({
   offlineAccess: true, // if you want to access Google API on behalf of the user FROM YOUR SERVER
   hostedDomain: '', // specifies a hosted domain restriction
   loginHint: '', // [iOS] The user's ID, or email address, to be prefilled in the authentication UI if possible. [See docs here](https://developers.google.com/identity/sign-in/ios/api/interface_g_i_d_sign_in.html#a0a68c7504c31ab0b728432565f6e33fd)
-  forceConsentPrompt: true, // [Android] if you want to show the authorization prompt at each login.
+  forceConsentPrompt: true, // [Android] if you want to show the authorization prompt at each login. 
   accountName: '', // [Android] specifies an account name on the device that should be used
   iosClientId: '<FROM DEVELOPER CONSOLE>', // [iOS] optional, if you want to specify the client ID of type iOS (otherwise, it is taken from GoogleService-Info.plist)
 });
@@ -162,25 +161,6 @@ isSignedIn = async () => {
   this.setState({ isLoginScreenPresented: !isSignedIn });
 };
 ```
-
-#### `getCurrentUser()`
-
-This method resolves with `null` or `userInfo` object. The call never rejects and in the native layer, this is a synchronous call. Note that on Android, `accessToken` is always `null` in the response.
-
-```js
-getCurrentUser = async () => {
-  const currentUser = await GoogleSignin.getCurrentUser();
-  this.setState({ currentUser });
-};
-```
-
-#### `clearCachedToken(tokenString)`
-
-This method only has an effect on Android (Calling this method always resolves on iOS.). You may run into a 401 Unauthorized error when a token is invalid. Call this method to remove the token from local cache and then call `getTokens()` to get fresh tokens.
-
-#### `getTokens()`
-
-Resolves with an object containing `{ idToken: string, accessToken: string, }` or rejects with an error.
 
 #### `signOut()`
 
@@ -269,10 +249,6 @@ Example `userInfo` which is returned after successful sign in.
 }
 ```
 
-## Want to contribute?
-
-Check out the [contributor guide](docs/CONTRIBUTING.md)!
-
 ## Notes
 
 Calling the methods exposed by this package may involve remote network calls and you should thus take into account that such calls may take a long time to complete (eg. in case of poor network connection).
@@ -283,7 +259,7 @@ Read [iOS documentation](https://developers.google.com/identity/sign-in/ios/back
 
 **serverAuthCode Note**: serverAuthCode is not null only if you specify a valid `webClientId` and set `offlineAccess` to true. once you get the auth code, you can send it to your backend server and exchange the code for an access token. Only with this freshly acquired token can you access user data.
 
-Read [iOS documentation](https://developers.google.com/identity/sign-in/ios/offline-access) and [Android documentation](https://developers.google.com/identity/sign-in/android/offline-access) for more information.
+Read [iOS documentation](https://developers.google.com/identity/sign-in/ios/offline-access) and [Android documentation](https://developers.google.com/identity/sign-in/android/offline-access) for more information
 
 ## Additional scopes
 
